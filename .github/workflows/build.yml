@@ -1,0 +1,36 @@
+name: Build plugin from zip
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: |
+          ZIP=$(ls *.zip | head -1)
+          echo "Using $ZIP"
+          mkdir -p work
+          unzip -q "$ZIP" -d work
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: work/**/pom.xml
+
+      - name: Build
+        run: |
+          POM=$(find work -name pom.xml | head -1)
+          mvn -B -f "$POM" clean package
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PracticeCore
+          path: work/**/target/PracticeCore-*.jar
+          if-no-files-found: error
